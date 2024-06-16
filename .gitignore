@@ -13,6 +13,6 @@ wheels/
 .env
 
 # data directory
+CRON_LOG/
 JRDB/
 JRDB_ZIP/
-

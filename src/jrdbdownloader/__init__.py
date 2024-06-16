@@ -1,2 +1,4 @@
-def hello() -> str:
-    return "Hello from jrdbdownloader!"
+from .main import main
+
+if __name__ == "__main__":
+    main()
