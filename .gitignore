@@ -6,6 +6,9 @@ dist/
 wheels/
 *.egg-info
 
+# google drive
+.tmp*/
+
 # venv
 .venv
 
