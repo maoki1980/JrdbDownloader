@@ -125,6 +125,9 @@ def main():
     # jrdb_zip_dir = "../../JRDB_ZIP"
     # jrdb_txt_dir = "../../JRDB"
 
+    # スクリプト開始時刻をログとして表示
+    print(f"Script started at: {datetime.now()}")
+
     # 基本URLの定義
     base_jrdb_url = "http://www.jrdb.com/member/datazip"
 
