@@ -1,6 +1,7 @@
 import os
 import re
 import zipfile
+from datetime import datetime
 
 import requests
 from bs4 import BeautifulSoup
@@ -121,38 +122,16 @@ load_dotenv("../../.env")
 jrdb_user = os.getenv("JRDB_USER")
 jrdb_pass = os.getenv("JRDB_PASS")
 
+# 基本URLの定義
+base_jrdb_url = "http://www.jrdb.com/member/datazip"
+
 # ダウンロードカテゴリの設定
 categories = [
-    (
-        "Paci",
-        "http://www.jrdb.com/member/datazip/Paci/index.html",
-        "http://www.jrdb.com/member/datazip/Paci/",
-        None,
-    ),
-    (
-        "Ov",
-        "http://www.jrdb.com/member/datazip/Ov/index.html",
-        "http://www.jrdb.com/member/datazip/Ov/",
-        None,
-    ),
-    (
-        "Sed",
-        "http://www.jrdb.com/member/datazip/Sed/index.html",
-        "http://www.jrdb.com/member/datazip/Sed/",
-        "SED_",
-    ),
-    (
-        "Skb",
-        "http://www.jrdb.com/member/datazip/Skb/index.html",
-        "http://www.jrdb.com/member/datazip/Skb/",
-        "SKB_",
-    ),
-    (
-        "Hjc",
-        "http://www.jrdb.com/member/datazip/Hjc/index.html",
-        "http://www.jrdb.com/member/datazip/Hjc/",
-        "HJC_",
-    ),
+    ("Paci", f"{base_jrdb_url}/Paci/index.html", f"{base_jrdb_url}/Paci/", None),
+    ("Ov", f"{base_jrdb_url}/Ov/index.html", f"{base_jrdb_url}/Ov/", None),
+    ("Sed", f"{base_jrdb_url}/Sed/index.html", f"{base_jrdb_url}/Sed/", "SED_"),
+    ("Skb", f"{base_jrdb_url}/Skb/index.html", f"{base_jrdb_url}/Skb/", "SKB_"),
+    ("Hjc", f"{base_jrdb_url}/Hjc/index.html", f"{base_jrdb_url}/Hjc/", "HJC_"),
 ]
 
 # カテゴリデータのダウンロードと抽出
@@ -170,42 +149,12 @@ for category, page_url, base_url, exclusion_prefix in categories:
 # マスタ系データ用のダウンロードリスト作成
 l_numbers = extract_six_digit_numbers(jrdb_zip_dir)
 master_categories = [
-    (
-        "CZA",
-        "http://www.jrdb.com/member/datazip/Cs/{year}/CZA{number}.zip",
-        "Cs",
-        "list_cz.txt",
-    ),
-    (
-        "CSA",
-        "http://www.jrdb.com/member/datazip/Cs/{year}/CSA{number}.zip",
-        "Cs",
-        "list_cs.txt",
-    ),
-    (
-        "KZA",
-        "http://www.jrdb.com/member/datazip/Ks/{year}/KZA{number}.zip",
-        "Ks",
-        "list_kz.txt",
-    ),
-    (
-        "KSA",
-        "http://www.jrdb.com/member/datazip/Ks/{year}/KSA{number}.zip",
-        "Ks",
-        "list_ks.txt",
-    ),
-    (
-        "MZA",
-        "http://www.jrdb.com/member/datazip/Ms/{year}/MZA{number}.zip",
-        "Ms",
-        "list_mz.txt",
-    ),
-    (
-        "MSA",
-        "http://www.jrdb.com/member/datazip/Ms/{year}/MSA{number}.zip",
-        "Ms",
-        "list_ms.txt",
-    ),
+    ("CZA", f"{base_jrdb_url}/Cs/{{year}}/CZA{{number}}.zip", "Cs", "list_cz.txt"),
+    ("CSA", f"{base_jrdb_url}/Cs/{{year}}/CSA{{number}}.zip", "Cs", "list_cs.txt"),
+    ("KZA", f"{base_jrdb_url}/Ks/{{year}}/KZA{{number}}.zip", "Ks", "list_kz.txt"),
+    ("KSA", f"{base_jrdb_url}/Ks/{{year}}/KSA{{number}}.zip", "Ks", "list_ks.txt"),
+    ("MZA", f"{base_jrdb_url}/Ms/{{year}}/MZA{{number}}.zip", "Ms", "list_mz.txt"),
+    ("MSA", f"{base_jrdb_url}/Ms/{{year}}/MSA{{number}}.zip", "Ms", "list_ms.txt"),
 ]
 
 # マスタ系データのダウンロードと抽出
@@ -218,3 +167,7 @@ for category, base_url_pattern, dir_name, list_file_name in master_categories:
         os.path.join(jrdb_zip_dir, dir_name, list_file_name),
         category,
     )
+
+# スクリプト終了時刻をログとして表示
+print(f"\nScript finished at: {datetime.now()}")
+print("==================================================")
