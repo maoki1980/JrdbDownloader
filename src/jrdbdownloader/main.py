@@ -114,8 +114,11 @@ def download_category_data(
     download_and_extract_zip(zip_urls, download_dir, extract_dir, list_file, category)
 
 
-jrdb_zip_dir = "../../JRDB_ZIP"
-jrdb_txt_dir = "../../JRDB"
+jrdb_zip_dir = "/app/JRDB_ZIP"
+jrdb_txt_dir = "/app/JRDB"
+# Debug
+# jrdb_zip_dir = "../../JRDB_ZIP"
+# jrdb_txt_dir = "../../JRDB"
 
 # .envファイルからJRDBの認証情報を読み込む
 load_dotenv("../../.env")
