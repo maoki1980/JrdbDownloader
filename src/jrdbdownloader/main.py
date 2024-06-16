@@ -9,6 +9,10 @@ from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
 from tqdm import tqdm
 
+load_dotenv("../../.env")
+jrdb_user = os.getenv("JRDB_USER")
+jrdb_pass = os.getenv("JRDB_PASS")
+
 
 def get_zip_links(jrdb_url, base_url):
     response = requests.get(jrdb_url, auth=HTTPBasicAuth(jrdb_user, jrdb_pass))
@@ -114,63 +118,64 @@ def download_category_data(
     download_and_extract_zip(zip_urls, download_dir, extract_dir, list_file, category)
 
 
-jrdb_zip_dir = "/app/JRDB_ZIP"
-jrdb_txt_dir = "/app/JRDB"
-# Debug
-# jrdb_zip_dir = "../../JRDB_ZIP"
-# jrdb_txt_dir = "../../JRDB"
+def main():
+    jrdb_zip_dir = "/app/JRDB_ZIP"
+    jrdb_txt_dir = "/app/JRDB"
+    # Debug
+    # jrdb_zip_dir = "../../JRDB_ZIP"
+    # jrdb_txt_dir = "../../JRDB"
 
-# .envファイルからJRDBの認証情報を読み込む
-load_dotenv("../../.env")
-jrdb_user = os.getenv("JRDB_USER")
-jrdb_pass = os.getenv("JRDB_PASS")
+    # 基本URLの定義
+    base_jrdb_url = "http://www.jrdb.com/member/datazip"
 
-# 基本URLの定義
-base_jrdb_url = "http://www.jrdb.com/member/datazip"
+    # ダウンロードカテゴリの設定
+    categories = [
+        ("Paci", f"{base_jrdb_url}/Paci/index.html", f"{base_jrdb_url}/Paci/", None),
+        ("Ov", f"{base_jrdb_url}/Ov/index.html", f"{base_jrdb_url}/Ov/", None),
+        ("Sed", f"{base_jrdb_url}/Sed/index.html", f"{base_jrdb_url}/Sed/", "SED_"),
+        ("Skb", f"{base_jrdb_url}/Skb/index.html", f"{base_jrdb_url}/Skb/", "SKB_"),
+        ("Hjc", f"{base_jrdb_url}/Hjc/index.html", f"{base_jrdb_url}/Hjc/", "HJC_"),
+    ]
 
-# ダウンロードカテゴリの設定
-categories = [
-    ("Paci", f"{base_jrdb_url}/Paci/index.html", f"{base_jrdb_url}/Paci/", None),
-    ("Ov", f"{base_jrdb_url}/Ov/index.html", f"{base_jrdb_url}/Ov/", None),
-    ("Sed", f"{base_jrdb_url}/Sed/index.html", f"{base_jrdb_url}/Sed/", "SED_"),
-    ("Skb", f"{base_jrdb_url}/Skb/index.html", f"{base_jrdb_url}/Skb/", "SKB_"),
-    ("Hjc", f"{base_jrdb_url}/Hjc/index.html", f"{base_jrdb_url}/Hjc/", "HJC_"),
-]
+    # カテゴリデータのダウンロードと抽出
+    for category, page_url, base_url, exclusion_prefix in categories:
+        download_category_data(
+            page_url,
+            base_url,
+            os.path.join(jrdb_zip_dir, category),
+            os.path.join(jrdb_txt_dir, category),
+            os.path.join(jrdb_zip_dir, category, "list.txt"),
+            category,
+            exclusion_prefix,
+        )
 
-# カテゴリデータのダウンロードと抽出
-for category, page_url, base_url, exclusion_prefix in categories:
-    download_category_data(
-        page_url,
-        base_url,
-        os.path.join(jrdb_zip_dir, category),
-        os.path.join(jrdb_txt_dir, category),
-        os.path.join(jrdb_zip_dir, category, "list.txt"),
-        category,
-        exclusion_prefix,
-    )
+    # マスタ系データ用のダウンロードリスト作成
+    l_numbers = extract_six_digit_numbers(jrdb_zip_dir)
+    master_categories = [
+        ("CZA", f"{base_jrdb_url}/Cs/{{year}}/CZA{{number}}.zip", "Cs", "list_cz.txt"),
+        ("CSA", f"{base_jrdb_url}/Cs/{{year}}/CSA{{number}}.zip", "Cs", "list_cs.txt"),
+        ("KZA", f"{base_jrdb_url}/Ks/{{year}}/KZA{{number}}.zip", "Ks", "list_kz.txt"),
+        ("KSA", f"{base_jrdb_url}/Ks/{{year}}/KSA{{number}}.zip", "Ks", "list_ks.txt"),
+        ("MZA", f"{base_jrdb_url}/Ms/{{year}}/MZA{{number}}.zip", "Ms", "list_mz.txt"),
+        ("MSA", f"{base_jrdb_url}/Ms/{{year}}/MSA{{number}}.zip", "Ms", "list_ms.txt"),
+    ]
 
-# マスタ系データ用のダウンロードリスト作成
-l_numbers = extract_six_digit_numbers(jrdb_zip_dir)
-master_categories = [
-    ("CZA", f"{base_jrdb_url}/Cs/{{year}}/CZA{{number}}.zip", "Cs", "list_cz.txt"),
-    ("CSA", f"{base_jrdb_url}/Cs/{{year}}/CSA{{number}}.zip", "Cs", "list_cs.txt"),
-    ("KZA", f"{base_jrdb_url}/Ks/{{year}}/KZA{{number}}.zip", "Ks", "list_kz.txt"),
-    ("KSA", f"{base_jrdb_url}/Ks/{{year}}/KSA{{number}}.zip", "Ks", "list_ks.txt"),
-    ("MZA", f"{base_jrdb_url}/Ms/{{year}}/MZA{{number}}.zip", "Ms", "list_mz.txt"),
-    ("MSA", f"{base_jrdb_url}/Ms/{{year}}/MSA{{number}}.zip", "Ms", "list_ms.txt"),
-]
+    # マスタ系データのダウンロードと抽出
+    for category, base_url_pattern, dir_name, list_file_name in master_categories:
+        zip_urls = get_zip_urls_from_numbers(l_numbers, base_url_pattern)
+        download_and_extract_zip(
+            zip_urls,
+            os.path.join(jrdb_zip_dir, dir_name),
+            os.path.join(jrdb_txt_dir, dir_name),
+            os.path.join(jrdb_zip_dir, dir_name, list_file_name),
+            category,
+        )
 
-# マスタ系データのダウンロードと抽出
-for category, base_url_pattern, dir_name, list_file_name in master_categories:
-    zip_urls = get_zip_urls_from_numbers(l_numbers, base_url_pattern)
-    download_and_extract_zip(
-        zip_urls,
-        os.path.join(jrdb_zip_dir, dir_name),
-        os.path.join(jrdb_txt_dir, dir_name),
-        os.path.join(jrdb_zip_dir, dir_name, list_file_name),
-        category,
-    )
+    # スクリプト終了時刻をログとして表示
+    print(f"\nScript finished at: {datetime.now()}")
+    print("==================================================")
 
-# スクリプト終了時刻をログとして表示
-print(f"\nScript finished at: {datetime.now()}")
-print("==================================================")
+
+# スクリプトが直接実行された場合にmain関数を呼び出す
+if __name__ == "__main__":
+    main()
