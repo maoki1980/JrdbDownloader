@@ -31,14 +31,15 @@ def save_current_list(file_path, current_list):
         file.write("\n".join(current_list))
 
 
-def download_and_extract_zip(zip_urls, download_dir, extract_dir, list_file):
+def download_and_extract_zip(zip_urls, download_dir, extract_dir, list_file, category):
     os.makedirs(download_dir, exist_ok=True)
     os.makedirs(extract_dir, exist_ok=True)
 
     previous_list = read_previous_list(list_file)
     new_urls = [url for url in zip_urls if url not in previous_list]
 
-    for zip_url in tqdm(new_urls, desc="Downloading ZIP files"):
+    print(f"List Length of {category}: {len(new_urls)}")
+    for zip_url in tqdm(new_urls, desc=f"Downloading ZIP files of {category}"):
         zip_filename = os.path.join(download_dir, os.path.basename(zip_url))
 
         if not os.path.exists(zip_filename):
@@ -93,6 +94,25 @@ def extract_six_digit_numbers(directory):
     return sorted_numbers
 
 
+def download_category_data(
+    page_url,
+    base_url,
+    download_dir,
+    extract_dir,
+    list_file,
+    category,
+    exclusion_prefix=None,
+):
+    zip_urls = get_zip_links(page_url, base_url)
+    if exclusion_prefix:
+        zip_urls = [
+            url
+            for url in zip_urls
+            if not os.path.basename(url).startswith(exclusion_prefix)
+        ]
+    download_and_extract_zip(zip_urls, download_dir, extract_dir, list_file, category)
+
+
 jrdb_zip_dir = "../../JRDB_ZIP"
 jrdb_txt_dir = "../../JRDB"
 
@@ -101,143 +121,100 @@ load_dotenv("../../.env")
 jrdb_user = os.getenv("JRDB_USER")
 jrdb_pass = os.getenv("JRDB_PASS")
 
-# 前日系データ JRDBデータパック (Paci) のダウンロード
-page_url = "http://www.jrdb.com/member/datazip/Paci/index.html"
-base_url = "http://www.jrdb.com/member/datazip/Paci/"
-zip_urls = get_zip_links(page_url, base_url)
-print(f"List Length: {len(zip_urls)}")
-download_and_extract_zip(
-    zip_urls,
-    os.path.join(jrdb_zip_dir, "Paci"),
-    os.path.join(jrdb_txt_dir, "Paci"),
-    os.path.join(jrdb_zip_dir, "Paci", "list.txt"),
-)
-
-# 前日系データ 3連単基準オッズデータ (OV) のダウンロード
-page_url = "http://www.jrdb.com/member/datazip/Ov/index.html"
-base_url = "http://www.jrdb.com/member/datazip/Ov/"
-zip_urls = get_zip_links(page_url, base_url)
-print(f"List Length: {len(zip_urls)}")
-download_and_extract_zip(
-    zip_urls,
-    os.path.join(jrdb_zip_dir, "Ov"),
-    os.path.join(jrdb_txt_dir, "Ov"),
-    os.path.join(jrdb_zip_dir, "Ov", "list.txt"),
-)
-
-# 成績系データ JRDB成績データ (SE*) のダウンロード
-page_url = "http://www.jrdb.com/member/datazip/Sed/index.html"
-base_url = "http://www.jrdb.com/member/datazip/Sed/"
-zip_urls = [
-    url
-    for url in get_zip_links(page_url, base_url)
-    if not os.path.basename(url).startswith("SED_")
+# ダウンロードカテゴリの設定
+categories = [
+    (
+        "Paci",
+        "http://www.jrdb.com/member/datazip/Paci/index.html",
+        "http://www.jrdb.com/member/datazip/Paci/",
+        None,
+    ),
+    (
+        "Ov",
+        "http://www.jrdb.com/member/datazip/Ov/index.html",
+        "http://www.jrdb.com/member/datazip/Ov/",
+        None,
+    ),
+    (
+        "Sed",
+        "http://www.jrdb.com/member/datazip/Sed/index.html",
+        "http://www.jrdb.com/member/datazip/Sed/",
+        "SED_",
+    ),
+    (
+        "Skb",
+        "http://www.jrdb.com/member/datazip/Skb/index.html",
+        "http://www.jrdb.com/member/datazip/Skb/",
+        "SKB_",
+    ),
+    (
+        "Hjc",
+        "http://www.jrdb.com/member/datazip/Hjc/index.html",
+        "http://www.jrdb.com/member/datazip/Hjc/",
+        "HJC_",
+    ),
 ]
-print(f"List Length: {len(zip_urls)}")
-download_and_extract_zip(
-    zip_urls,
-    os.path.join(jrdb_zip_dir, "Sed"),
-    os.path.join(jrdb_txt_dir, "Sed"),
-    os.path.join(jrdb_zip_dir, "Sed", "list.txt"),
-)
 
-# 成績系データ JRDB成績拡張データ (SK*) のダウンロード
-page_url = "http://www.jrdb.com/member/datazip/Skb/index.html"
-base_url = "http://www.jrdb.com/member/datazip/Skb/"
-zip_urls = [
-    url
-    for url in get_zip_links(page_url, base_url)
-    if not os.path.basename(url).startswith("SKB_")
-]
-print(f"List Length: {len(zip_urls)}")
-download_and_extract_zip(
-    zip_urls,
-    os.path.join(jrdb_zip_dir, "Skb"),
-    os.path.join(jrdb_txt_dir, "Skb"),
-    os.path.join(jrdb_zip_dir, "Skb", "list.txt"),
-)
+# カテゴリデータのダウンロードと抽出
+for category, page_url, base_url, exclusion_prefix in categories:
+    download_category_data(
+        page_url,
+        base_url,
+        os.path.join(jrdb_zip_dir, category),
+        os.path.join(jrdb_txt_dir, category),
+        os.path.join(jrdb_zip_dir, category, "list.txt"),
+        category,
+        exclusion_prefix,
+    )
 
 # マスタ系データ用のダウンロードリスト作成
 l_numbers = extract_six_digit_numbers(jrdb_zip_dir)
-
-# マスタ系データ JRDB調教師データ (CZA) のダウンロード
-base_url_pattern = "http://www.jrdb.com/member/datazip/Cs/{year}/CZA{number}.zip"
-zip_urls = get_zip_urls_from_numbers(l_numbers, base_url_pattern)
-print(f"List Length: {len(zip_urls)}")
-download_and_extract_zip(
-    zip_urls,
-    os.path.join(jrdb_zip_dir, "Cs"),
-    os.path.join(jrdb_txt_dir, "Cs"),
-    os.path.join(jrdb_zip_dir, "Cs", "list_cz.txt"),
-)
-
-# マスタ系データ JRDB調教師データ (CSA) のダウンロード
-base_url_pattern = "http://www.jrdb.com/member/datazip/Cs/{year}/CSA{number}.zip"
-zip_urls = get_zip_urls_from_numbers(l_numbers, base_url_pattern)
-print(f"List Length: {len(zip_urls)}")
-download_and_extract_zip(
-    zip_urls,
-    os.path.join(jrdb_zip_dir, "Cs"),
-    os.path.join(jrdb_txt_dir, "Cs"),
-    os.path.join(jrdb_zip_dir, "Cs", "list_cs.txt"),
-)
-
-# マスタ系データ JRDB騎手データ (KZA) のダウンロード
-base_url_pattern = "http://www.jrdb.com/member/datazip/Ks/{year}/KZA{number}.zip"
-zip_urls = get_zip_urls_from_numbers(l_numbers, base_url_pattern)
-print(f"List Length: {len(zip_urls)}")
-download_and_extract_zip(
-    zip_urls,
-    os.path.join(jrdb_zip_dir, "Ks"),
-    os.path.join(jrdb_txt_dir, "Ks"),
-    os.path.join(jrdb_zip_dir, "Ks", "list_kz.txt"),
-)
-
-# マスタ系データ JRDB騎手データ (KSA) のダウンロード
-base_url_pattern = "http://www.jrdb.com/member/datazip/Ks/{year}/KSA{number}.zip"
-zip_urls = get_zip_urls_from_numbers(l_numbers, base_url_pattern)
-print(f"List Length: {len(zip_urls)}")
-download_and_extract_zip(
-    zip_urls,
-    os.path.join(jrdb_zip_dir, "Ks"),
-    os.path.join(jrdb_txt_dir, "Ks"),
-    os.path.join(jrdb_zip_dir, "Ks", "list_ks.txt"),
-)
-
-# マスタ系データ JRDB抹消馬データ (MZA) のダウンロード
-base_url_pattern = "http://www.jrdb.com/member/datazip/Ms/{year}/MZA{number}.zip"
-zip_urls = get_zip_urls_from_numbers(l_numbers, base_url_pattern)
-print(f"List Length: {len(zip_urls)}")
-download_and_extract_zip(
-    zip_urls,
-    os.path.join(jrdb_zip_dir, "Ms"),
-    os.path.join(jrdb_txt_dir, "Ms"),
-    os.path.join(jrdb_zip_dir, "Ms", "list_mz.txt"),
-)
-
-# マスタ系データ JRDB抹消馬データ (MSA) のダウンロード
-base_url_pattern = "http://www.jrdb.com/member/datazip/Ms/{year}/MSA{number}.zip"
-zip_urls = get_zip_urls_from_numbers(l_numbers, base_url_pattern)
-print(f"List Length: {len(zip_urls)}")
-download_and_extract_zip(
-    zip_urls,
-    os.path.join(jrdb_zip_dir, "Ms"),
-    os.path.join(jrdb_txt_dir, "Ms"),
-    os.path.join(jrdb_zip_dir, "Ms", "list_ms.txt"),
-)
-
-# 直前系データ JRDB払戻情報データ (HJ*) のダウンロード
-page_url = "http://www.jrdb.com/member/datazip/Hjc/index.html"
-base_url = "http://www.jrdb.com/member/datazip/Hjc/"
-zip_urls = [
-    url
-    for url in get_zip_links(page_url, base_url)
-    if not os.path.basename(url).startswith("HJC_")
+master_categories = [
+    (
+        "CZA",
+        "http://www.jrdb.com/member/datazip/Cs/{year}/CZA{number}.zip",
+        "Cs",
+        "list_cz.txt",
+    ),
+    (
+        "CSA",
+        "http://www.jrdb.com/member/datazip/Cs/{year}/CSA{number}.zip",
+        "Cs",
+        "list_cs.txt",
+    ),
+    (
+        "KZA",
+        "http://www.jrdb.com/member/datazip/Ks/{year}/KZA{number}.zip",
+        "Ks",
+        "list_kz.txt",
+    ),
+    (
+        "KSA",
+        "http://www.jrdb.com/member/datazip/Ks/{year}/KSA{number}.zip",
+        "Ks",
+        "list_ks.txt",
+    ),
+    (
+        "MZA",
+        "http://www.jrdb.com/member/datazip/Ms/{year}/MZA{number}.zip",
+        "Ms",
+        "list_mz.txt",
+    ),
+    (
+        "MSA",
+        "http://www.jrdb.com/member/datazip/Ms/{year}/MSA{number}.zip",
+        "Ms",
+        "list_ms.txt",
+    ),
 ]
-print(f"List Length: {len(zip_urls)}")
-download_and_extract_zip(
-    zip_urls,
-    os.path.join(jrdb_zip_dir, "Hjc"),
-    os.path.join(jrdb_txt_dir, "Hjc"),
-    os.path.join(jrdb_zip_dir, "Hjc", "list.txt"),
-)
+
+# マスタ系データのダウンロードと抽出
+for category, base_url_pattern, dir_name, list_file_name in master_categories:
+    zip_urls = get_zip_urls_from_numbers(l_numbers, base_url_pattern)
+    download_and_extract_zip(
+        zip_urls,
+        os.path.join(jrdb_zip_dir, dir_name),
+        os.path.join(jrdb_txt_dir, dir_name),
+        os.path.join(jrdb_zip_dir, dir_name, list_file_name),
+        category,
+    )
