@@ -9,7 +9,10 @@ from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
 from tqdm import tqdm
 
-load_dotenv("../../.env")
+env_file = os.getenv("ENV_FILE", "../../.env")
+load_dotenv(env_file)
+jrdb_zip_dir = os.getenv("JRDB_ZIP_DIR")
+jrdb_txt_dir = os.getenv("JRDB_TXT_DIR")
 jrdb_user = os.getenv("JRDB_USER")
 jrdb_pass = os.getenv("JRDB_PASS")
 
@@ -119,12 +122,6 @@ def download_category_data(
 
 
 def main():
-    jrdb_zip_dir = "/app/JRDB_ZIP"
-    jrdb_txt_dir = "/app/JRDB"
-    # Debug
-    # jrdb_zip_dir = "../../JRDB_ZIP"
-    # jrdb_txt_dir = "../../JRDB"
-
     # スクリプト開始時刻をログとして表示
     print(f"Script started at: {datetime.now()}")
 

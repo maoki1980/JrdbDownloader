@@ -19,8 +19,6 @@ docker run -d \
 -v {absolute_path/to/project_dir}/JRDB:/app/JRDB \
 -v {absolute_path/to/project_dir}/CRON_LOG:/app/CRON_LOG \
 -e TZ=Asia/Tokyo \
--e JRDB_USER={jrdb_user_id} \
--e JRDB_PASS={jrdb_password} \
 jrdbdownloader:latest
 ```
 

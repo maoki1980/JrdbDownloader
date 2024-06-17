@@ -6,6 +6,7 @@ WORKDIR /app
 
 # 依存関係のコピーとインストール
 COPY requirements.txt ./
+COPY .env.docker ./
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # アプリケーションのソースコードをコピー
@@ -14,6 +15,7 @@ COPY src/ ./src/
 # 環境変数の設定
 ENV PYTHONPATH=/app/src
 ENV PYTHONUNBUFFERED=1
+ENV ENV_FILE=.env.docker
 
 # cronとbashのインストール
 RUN apt-get update && apt-get install -y cron bash

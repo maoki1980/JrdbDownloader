@@ -13,7 +13,7 @@ wheels/
 .venv
 
 # environment
-.env
+.env*
 
 # data directory
 CRON_LOG/
