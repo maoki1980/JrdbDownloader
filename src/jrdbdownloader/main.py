@@ -123,6 +123,11 @@ def download_category_data(
 
 
 def main():
+    # 環境変数の読み込み確認
+    print(f"ENV_FILE: '{env_file}'")
+    print(f"JRDB_ZIP_DIR: '{jrdb_zip_dir}'")
+    print(f"JRDB_TXT_DIR: '{jrdb_txt_dir}'")
+
     # スクリプト開始時刻をログとして表示
     print(f"Script started at: {datetime.now()}")
 

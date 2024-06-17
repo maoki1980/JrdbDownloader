@@ -15,9 +15,9 @@ docker build --no-cache -t jrdbdownloader .
 ```bash
 docker run -d \
 --name jrdbdownloader \
--v {absolute_path/to/project_dir}/JRDB_ZIP:/app/JRDB_ZIP \
--v {absolute_path/to/project_dir}/JRDB:/app/JRDB \
--v {absolute_path/to/project_dir}/CRON_LOG:/app/CRON_LOG \
+-v {absolute_path/to/data_dir}/JRDB_ZIP:/app/JRDB_ZIP \
+-v {absolute_path/to/data_dir}/JRDB:/app/JRDB \
+-v {absolute_path/to/data_dir}/CRON_LOG:/app/CRON_LOG \
 -e TZ=Asia/Tokyo \
 jrdbdownloader:latest
 ```
