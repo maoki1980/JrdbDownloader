@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
 from tqdm import tqdm
 
-env_file = os.getenv("ENV_FILE", "../../.env")
+project_path = "../../"
+env_file = os.getenv("ENV_FILE", os.path.join(project_path, ".env"))
 load_dotenv(env_file)
 jrdb_zip_dir = os.getenv("JRDB_ZIP_DIR")
 jrdb_txt_dir = os.getenv("JRDB_TXT_DIR")
