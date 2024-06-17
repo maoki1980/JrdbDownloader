@@ -7,7 +7,7 @@ printenv | grep -v "no_proxy" >> /etc/environment
 mkdir -p /app/CRON_LOG
 
 # cronジョブの設定
-echo "10 * * * * root /usr/local/bin/python /app/src/jrdbdownloader/main.py >> /app/logs/cron.log 2>&1" > /etc/cron.d/jrdbdownloader
+echo "10 * * * * root /usr/local/bin/python /app/src/jrdbdownloader/main.py >> /app/CRON_LOG/cron.log 2>&1" > /etc/cron.d/jrdbdownloader
 
 # cronジョブの権限設定
 chmod 0644 /etc/cron.d/jrdbdownloader
