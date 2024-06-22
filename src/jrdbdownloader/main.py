@@ -31,7 +31,9 @@ def get_zip_links(jrdb_url, base_url):
 def read_previous_list(file_path):
     if os.path.exists(file_path):
         with open(file_path, "r") as file:
-            return file.read().splitlines()
+            lst = file.read().splitlines()
+            lst = lst[1:]
+            return lst
     return []
 
 
@@ -51,24 +53,23 @@ def download_and_extract_zip(zip_urls, download_dir, extract_dir, list_file, cat
     for zip_url in tqdm(new_urls, desc=f"Downloading ZIP files of {category}"):
         zip_filename = os.path.join(download_dir, os.path.basename(zip_url))
 
-        if not os.path.exists(zip_filename):
-            try:
-                zip_response = requests.get(
-                    zip_url, auth=HTTPBasicAuth(jrdb_user, jrdb_pass)
-                )
-                zip_response.raise_for_status()
+        try:
+            zip_response = requests.get(
+                zip_url, auth=HTTPBasicAuth(jrdb_user, jrdb_pass)
+            )
+            zip_response.raise_for_status()
 
-                with open(zip_filename, "wb") as file:
-                    file.write(zip_response.content)
+            with open(zip_filename, "wb") as file:
+                file.write(zip_response.content)
 
-                with zipfile.ZipFile(zip_filename, "r") as thezip:
-                    thezip.extractall(extract_dir)
-            except requests.exceptions.HTTPError as e:
-                if zip_response.status_code == 404:
-                    continue
-                else:
-                    print(f"HTTP error occurred: {e}")
-                    raise
+            with zipfile.ZipFile(zip_filename, "r") as thezip:
+                thezip.extractall(extract_dir)
+        except requests.exceptions.HTTPError as e:
+            if zip_response.status_code == 404:
+                continue
+            else:
+                print(f"HTTP error occurred: {e}")
+                raise
 
     save_current_list(list_file, zip_urls)
 
@@ -124,6 +125,7 @@ def download_category_data(
 
 def main():
     # 環境変数の読み込み確認
+    print("==================================================")
     print(f"ENV_FILE: '{env_file}'")
     print(f"JRDB_ZIP_DIR: '{jrdb_zip_dir}'")
     print(f"JRDB_TXT_DIR: '{jrdb_txt_dir}'")
