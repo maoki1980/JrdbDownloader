@@ -7,6 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
+from requests.exceptions import ConnectionError, HTTPError, Timeout
 from tqdm import tqdm
 
 project_path = "../../"
@@ -53,23 +54,30 @@ def download_and_extract_zip(zip_urls, download_dir, extract_dir, list_file, cat
     for zip_url in tqdm(new_urls, desc=f"Downloading ZIP files of {category}"):
         zip_filename = os.path.join(download_dir, os.path.basename(zip_url))
 
-        try:
-            zip_response = requests.get(
-                zip_url, auth=HTTPBasicAuth(jrdb_user, jrdb_pass)
-            )
-            zip_response.raise_for_status()
+        for attempt in range(3):  # 最大3回の再試行
+            try:
+                zip_response = requests.get(
+                    zip_url, auth=HTTPBasicAuth(jrdb_user, jrdb_pass), timeout=30
+                )
+                zip_response.raise_for_status()
 
-            with open(zip_filename, "wb") as file:
-                file.write(zip_response.content)
+                with open(zip_filename, "wb") as file:
+                    file.write(zip_response.content)
 
-            with zipfile.ZipFile(zip_filename, "r") as thezip:
-                thezip.extractall(extract_dir)
-        except requests.exceptions.HTTPError as e:
-            if zip_response.status_code == 404:
-                continue
-            else:
+                with zipfile.ZipFile(zip_filename, "r") as thezip:
+                    thezip.extractall(extract_dir)
+                break  # 成功した場合はループを抜ける
+            except HTTPError as e:
+                if zip_response.status_code == 404:
+                    break  # 404エラーの場合はスキップ
+                else:
+                    print(f"HTTP error occurred: {e}")
+                    if attempt == 2:  # 最後の試行で失敗した場合は例外を発生させる
+                        raise
+            except (ConnectionError, Timeout) as e:
                 print(f"HTTP error occurred: {e}")
-                raise
+                if attempt == 2:  # 最後の試行で失敗した場合は例外を発生させる
+                    raise
 
     save_current_list(list_file, zip_urls)
 
