@@ -33,7 +33,7 @@ def read_previous_list(file_path):
     if os.path.exists(file_path):
         with open(file_path, "r") as file:
             lst = file.read().splitlines()
-            lst = lst[1:]
+            lst = lst[3:]
             return lst
     return []
 
@@ -92,6 +92,17 @@ def get_zip_urls_from_numbers(l_zip_numbers, base_url_pattern):
     return zip_urls
 
 
+def convert_to_full_year(six_digit):
+    year = int(six_digit[:2])
+    if year <= 99 and year >= 0:
+        if year < 50:
+            full_year = 2000 + year
+        else:
+            full_year = 1900 + year
+    month_day = six_digit[2:]
+    return f"{full_year}{month_day}"
+
+
 def extract_six_digit_numbers(directory):
     # 正規表現パターン：6桁の数字
     pattern = re.compile(r"\d{6}")
@@ -106,8 +117,10 @@ def extract_six_digit_numbers(directory):
                 if matches:
                     six_digit_numbers.update(matches)
 
-    # リストに変換して降順にソート
-    sorted_numbers = sorted(six_digit_numbers, reverse=True)
+    # 6桁の数値を4桁の西暦を用いて変換
+    sorted_numbers = sorted(
+        six_digit_numbers, key=lambda x: convert_to_full_year(x), reverse=True
+    )
 
     return sorted_numbers
 
