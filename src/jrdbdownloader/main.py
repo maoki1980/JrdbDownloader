@@ -1,5 +1,6 @@
 import os
 import re
+import time
 import zipfile
 from datetime import datetime
 
@@ -7,7 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
-from requests.exceptions import ConnectionError, HTTPError, Timeout
+from requests.exceptions import HTTPError, RequestException
 from tqdm import tqdm
 
 project_path = "../../"
@@ -50,34 +51,50 @@ def download_and_extract_zip(zip_urls, download_dir, extract_dir, list_file, cat
     previous_list = read_previous_list(list_file)
     new_urls = [url for url in zip_urls if url not in previous_list]
 
+    max_retries = 5  # 最大試行回数
+    backoff_factor = 30  # リトライ感覚の基本単位[秒]
+
     print(f"List Length of {category}: {len(new_urls)}")
     for zip_url in tqdm(new_urls, desc=f"Downloading ZIP files of {category}"):
-        zip_filename = os.path.join(download_dir, os.path.basename(zip_url))
+        zip_name = os.path.basename(zip_url)
+        zip_path = os.path.join(download_dir, zip_name)
 
-        for attempt in range(3):  # 最大3回の再試行
+        for attempt in range(max_retries):  # 最大試行回数分繰り返す
             try:
                 zip_response = requests.get(
                     zip_url, auth=HTTPBasicAuth(jrdb_user, jrdb_pass), timeout=30
                 )
                 zip_response.raise_for_status()
 
-                with open(zip_filename, "wb") as file:
+                with open(zip_path, "wb") as file:
                     file.write(zip_response.content)
 
-                with zipfile.ZipFile(zip_filename, "r") as thezip:
+                with zipfile.ZipFile(zip_path, "r") as thezip:
                     thezip.extractall(extract_dir)
                 break  # 成功した場合はループを抜ける
             except HTTPError as e:
                 if zip_response.status_code == 404:
                     break  # 404エラーの場合はスキップ
                 else:
-                    print(f"HTTP error occurred: {e}")
-                    if attempt == 2:  # 最後の試行で失敗した場合は例外を発生させる
+                    print(f"HTTP error occurred for {zip_name}: {e}")
+                    if attempt < max_retries - 1:
+                        sleep_time = backoff_factor * (2**attempt)
+                        print(f"Retrying in {sleep_time} seconds...")
+                        time.sleep(sleep_time)
+                    else:  # 最後の試行で失敗した場合は例外を発生させる
+                        print(
+                            f"Failed to download {zip_url} after {max_retries} attempts."
+                        )
                         raise
-            except (ConnectionError, Timeout) as e:
-                print(f"HTTP error occurred: {e}")
-                if attempt == 2:  # 最後の試行で失敗した場合は例外を発生させる
-                    raise
+            except RequestException as e:
+                print(f"Error occurred while downloading {zip_name}: {e}")
+                if attempt < max_retries - 1:
+                    sleep_time = backoff_factor * (2**attempt)
+                    print(f"Retrying in {sleep_time} seconds...")
+                    time.sleep(sleep_time)
+                else:
+                    print(f"Failed to download {zip_url} after {max_retries} attempts.")
+                    raise  # 最後の試行で失敗した場合は例外を発生させる
 
     save_current_list(list_file, zip_urls)
 
